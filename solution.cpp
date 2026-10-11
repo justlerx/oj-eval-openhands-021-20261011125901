@@ -29,22 +29,34 @@ int main() {
     // Sort by x-coordinate
     sort(points.begin(), points.end());
     
+    // Create mapping from coordinates to indices for fast lookup
+    map<int, int> x_to_idx, y_to_idx;
+    for (int i = 0; i < n; i++) {
+        x_to_idx[points[i].x] = i;
+        y_to_idx[points[i].y] = i;
+    }
+    
     long long result = 0;
     
     // For each point as potential bottom-left corner
     for (int i = 0; i < n; i++) {
-        // Use a set to track y-coordinates of points we've seen
+        // Use a set to track y-coordinates of points between i and j
         set<int> seen_ys;
         
         // Process points to the right of i
         for (int j = i + 1; j < n; j++) {
             if (points[j].y > points[i].y) {
                 // Check if there are any points with y-coordinate between points[i].y and points[j].y
-                auto lower = seen_ys.lower_bound(points[i].y + 1);
-                auto upper = seen_ys.upper_bound(points[j].y - 1);
+                // that are also between points[i].x and points[j].x
+                bool has_inside = false;
+                for (int y : seen_ys) {
+                    if (y > points[i].y && y < points[j].y) {
+                        has_inside = true;
+                        break;
+                    }
+                }
                 
-                if (lower == upper) {
-                    // No points in the y-range, so this rectangle is empty
+                if (!has_inside) {
                     result++;
                 }
             }
