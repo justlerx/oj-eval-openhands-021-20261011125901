@@ -51,6 +51,8 @@ int main() {
             // Add current point's y-coordinate to the set
             seen_ys.insert(points[j].y);
         }
+        
+        
     }
     
     cout << result << endl;
