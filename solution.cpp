@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <map>
+#include <set>
 using namespace std;
 
 struct Point {
@@ -10,38 +11,6 @@ struct Point {
     bool operator<(const Point& other) const {
         if (x != other.x) return x < other.x;
         return y < other.y;
-    }
-};
-
-class FenwickTree {
-private:
-    vector<int> tree;
-    int size;
-    
-public:
-    FenwickTree(int n) : size(n), tree(n + 1, 0) {}
-    
-    void update(int idx, int delta) {
-        idx++;
-        while (idx <= size) {
-            tree[idx] += delta;
-            idx += idx & -idx;
-        }
-    }
-    
-    int query(int idx) {
-        idx++;
-        int result = 0;
-        while (idx > 0) {
-            result += tree[idx];
-            idx -= idx & -idx;
-        }
-        return result;
-    }
-    
-    int range_query(int l, int r) {
-        if (l > r) return 0;
-        return query(r) - query(l - 1);
     }
 };
 
@@ -60,43 +29,28 @@ int main() {
     // Sort by x-coordinate
     sort(points.begin(), points.end());
     
-    // Coordinate compression for y
-    vector<int> ys;
-    for (const auto& p : points) {
-        ys.push_back(p.y);
-    }
-    sort(ys.begin(), ys.end());
-    ys.erase(unique(ys.begin(), ys.end()), ys.end());
-    
-    map<int, int> y_to_idx;
-    for (int i = 0; i < ys.size(); i++) {
-        y_to_idx[ys[i]] = i;
-    }
-    
     long long result = 0;
     
     // For each point as potential bottom-left corner
     for (int i = 0; i < n; i++) {
-        // For each point to the right of i that could be top-right
+        // Use a set to track y-coordinates of points we've seen
+        set<int> seen_ys;
+        
+        // Process points to the right of i
         for (int j = i + 1; j < n; j++) {
             if (points[j].y > points[i].y) {
-                // Check if there are any points inside the rectangle
-                bool has_inside = false;
-                for (int k = 0; k < n; k++) {
-                    if (k == i || k == j) continue;
-                    
-                    // Check if point k is inside or on boundary of rectangle
-                    if (points[k].x >= points[i].x && points[k].x <= points[j].x &&
-                        points[k].y >= points[i].y && points[k].y <= points[j].y) {
-                        has_inside = true;
-                        break;
-                    }
-                }
+                // Check if there are any points with y-coordinate between points[i].y and points[j].y
+                auto lower = seen_ys.lower_bound(points[i].y + 1);
+                auto upper = seen_ys.upper_bound(points[j].y - 1);
                 
-                if (!has_inside) {
+                if (lower == upper) {
+                    // No points in the y-range, so this rectangle is empty
                     result++;
                 }
             }
+            
+            // Add current point's y-coordinate to the set
+            seen_ys.insert(points[j].y);
         }
     }
     
